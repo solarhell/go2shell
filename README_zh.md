@@ -30,15 +30,27 @@
 
 > 如果首选终端被卸载，会自动回退到系统内置的 Terminal.app。
 
-## 🎯 使用方式
+## 📦 安装
 
-### 第一步：安装应用
+### Homebrew（推荐）
+
+```bash
+# 安装
+brew install --no-quarantine solarhell/tap/go2shell
+
+# 升级
+brew upgrade --no-quarantine solarhell/tap/go2shell
+```
+
+### 从源码构建
 
 ```bash
 make install
 ```
 
-### 第二步：添加到 Finder 工具栏
+## 🎯 使用方式
+
+### 第一步：添加到 Finder 工具栏
 
 1. **打开 Applications 文件夹**
 2. **按住 ⌘ (Command) 键**

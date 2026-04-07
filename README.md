@@ -29,10 +29,21 @@ The app auto-detects the following terminals. Uninstalled ones are greyed out:
 
 > If the preferred terminal is uninstalled, it automatically falls back to the built-in Terminal.app.
 
-## Quick Start
+## Install
+
+### Homebrew (recommended)
 
 ```bash
-# Build and install
+# Install
+brew install --no-quarantine solarhell/tap/go2shell
+
+# Upgrade
+brew upgrade --no-quarantine solarhell/tap/go2shell
+```
+
+### Build from source
+
+```bash
 make install
 
 # Then drag go2shell.app from /Applications to the Finder toolbar
@@ -43,13 +54,7 @@ make install
 
 ## Usage
 
-### Step 1: Install
-
-```bash
-make install
-```
-
-### Step 2: Add to Finder Toolbar
+### Step 1: Add to Finder Toolbar
 
 1. Open the Applications folder
 2. Hold **⌘ (Command)**
