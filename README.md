@@ -35,10 +35,10 @@ The app auto-detects the following terminals. Uninstalled ones are greyed out:
 
 ```bash
 # Install
-brew install --no-quarantine solarhell/tap/go2shell
+brew install solarhell/tap/go2shell
 
 # Upgrade
-brew upgrade --no-quarantine solarhell/tap/go2shell
+brew upgrade solarhell/tap/go2shell
 ```
 
 ### Build from source

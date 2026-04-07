@@ -36,10 +36,10 @@
 
 ```bash
 # 安装
-brew install --no-quarantine solarhell/tap/go2shell
+brew install solarhell/tap/go2shell
 
 # 升级
-brew upgrade --no-quarantine solarhell/tap/go2shell
+brew upgrade solarhell/tap/go2shell
 ```
 
 ### 从源码构建
