@@ -1,0 +1,108 @@
+name: Release
+
+run-name: Release ${{ inputs.version != '' && inputs.version || 'auto' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号 (例如: v1.0.0，留空则自动递增 patch)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      resolved_version: ${{ steps.resolve-version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: resolve-version
+        run: |
+          set -euo pipefail
+
+          INPUT_VERSION="${{ inputs.version }}"
+          INPUT_VERSION="${INPUT_VERSION//[[:space:]]/}"
+
+          if [[ -n "$INPUT_VERSION" ]]; then
+            RESOLVED_VERSION="$INPUT_VERSION"
+            echo "Using manual version: $RESOLVED_VERSION"
+          else
+            git fetch --tags --force
+            LAST_TAG=$(
+              git tag --list --sort=-version:refname |
+              grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' |
+              head -n 1
+            )
+
+            if [[ -z "$LAST_TAG" ]]; then
+              RESOLVED_VERSION="v0.0.1"
+              echo "No existing tag found, defaulting to $RESOLVED_VERSION"
+            else
+              VERSION_PART="${LAST_TAG#v}"
+              IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_PART"
+              PATCH=$((PATCH + 1))
+              RESOLVED_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+              echo "Auto increment from $LAST_TAG to $RESOLVED_VERSION"
+            fi
+          fi
+
+          echo "Resolved version: $RESOLVED_VERSION"
+          echo "version=$RESOLVED_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.resolve-version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: 版本号格式不正确，应为 vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Check if tag exists
+        run: |
+          VERSION="${{ steps.resolve-version.outputs.version }}"
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag $VERSION 已存在"
+            exit 1
+          fi
+
+      - name: Create tag
+        run: |
+          VERSION="${{ steps.resolve-version.outputs.version }}"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.resolve-version.outputs.version }}
+          name: ${{ steps.resolve-version.outputs.version }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  build:
+    needs: release
+    uses: ./.github/workflows/build.yml
+    with:
+      tag: ${{ needs.release.outputs.resolved_version }}
+    permissions:
+      contents: write
+
+  update-homebrew:
+    needs:
+      - release
+      - build
+    uses: ./.github/workflows/update-homebrew.yml
+    with:
+      tag: ${{ needs.release.outputs.resolved_version }}
+    secrets:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

@@ -165,6 +165,14 @@ icon:
 	@rm -rf $(BUILD_DIR)/AppIcon.iconset
 	@echo "✅ 图标生成完成: Resources/AppIcon.icns"
 
+# 打包 Release zip（用于 Homebrew Cask 分发）
+release: build
+	@echo "📦 打包 Release..."
+	@mkdir -p build
+	@cd .build && zip -r ../build/go2shell.zip go2shell.app
+	@echo "✅ 打包完成: build/go2shell.zip"
+	@shasum -a 256 build/go2shell.zip
+
 # 运行测试
 test:
 	@echo "🧪 运行测试..."

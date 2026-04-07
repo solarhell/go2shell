@@ -1,0 +1,96 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-13
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Build
+        run: make build
+
+      - name: Create zip and checksum
+        run: |
+          cd .build
+          zip -r go2shell-macOS-${{ matrix.arch }}.zip go2shell.app
+          shasum -a 256 go2shell-macOS-${{ matrix.arch }}.zip | awk '{print $1}' > go2shell-macOS-${{ matrix.arch }}.zip.sha256
+          echo "SHA256:"
+          cat go2shell-macOS-${{ matrix.arch }}.zip.sha256
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            .build/go2shell-macOS-${{ matrix.arch }}.zip
+            .build/go2shell-macOS-${{ matrix.arch }}.zip.sha256
+
+  create-release:
+    name: Create Release
+    needs: [build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cp artifacts/macos-arm64/go2shell-macOS-arm64.zip release-assets/
+          cp artifacts/macos-arm64/go2shell-macOS-arm64.zip.sha256 release-assets/
+          cp artifacts/macos-x86_64/go2shell-macOS-x86_64.zip release-assets/
+          cp artifacts/macos-x86_64/go2shell-macOS-x86_64.zip.sha256 release-assets/
+          ls -lh release-assets/
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: release-assets/*
+          append_body: true
+          body: |
+
+            ---
+
+            ## 📦 下载
+
+            | 平台 | 文件 | 说明 |
+            |------|------|------|
+            | **macOS (ARM)** | `go2shell-macOS-arm64.zip` | Apple Silicon (M1/M2/M3/M4) |
+            | **macOS (Intel)** | `go2shell-macOS-x86_64.zip` | Intel 芯片 |
+
+            > ⚠️ 应用未经 notarize，首次打开可能被 Gatekeeper 拦截：
+            > ```bash
+            > xattr -d com.apple.quarantine /Applications/go2shell.app
+            > ```
+            > 或前往 系统设置 > 隐私与安全性 > 点击"仍要打开"。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
