@@ -38,8 +38,20 @@ build:
 
 	# 使用 SPM 构建 Release 版本
 	@echo "📦 使用 Swift Package Manager 编译..."
-	@swift build -c release
+	# @swift build -c release
+	@echo "📦 编译 arm64..."
+	@swift build -c release --arch arm64
+	@echo "📦 编译 x86_64..."
+	@swift build -c release --arch x86_64
 	@echo "✅ Swift 编译完成"
+	@echo ""
+
+	@echo "🔗 合并 universal binary..."
+	@lipo -create \
+		.build/arm64-apple-macosx/release/go2shell \
+		.build/x86_64-apple-macosx/release/go2shell \
+		-output .build/release/go2shell
+	@echo "✅ universal binary 已生成"
 	@echo ""
 
 	# 创建 App Bundle
@@ -69,7 +81,7 @@ create-bundle:
 	@cp $(RELEASE_DIR)/go2shell $(APP_BUNDLE)/Contents/MacOS/
 
 	# 复制 SPM resource bundle（本地化资源等）
-	@for bundle in $(BUILD_DIR)/arm64-apple-macosx/release/*.bundle; do \
+	@for bundle in $(BUILD_DIR)/release/*.bundle; do \
 		if [ -d "$$bundle" ]; then \
 			cp -r "$$bundle" $(APP_BUNDLE)/Contents/Resources/; \
 		fi; \
