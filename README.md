@@ -54,6 +54,14 @@ make install
 # Done! Click the toolbar icon to open a terminal in the current directory.
 ```
 
+> **Note**: The app is not notarized. macOS Gatekeeper may block it on first launch. To bypass:
+>
+> ```bash
+> xattr -d com.apple.quarantine /Applications/go2shell.app
+> ```
+>
+> Or go to **System Settings > Privacy & Security** and click "Open Anyway".
+
 ## Usage
 
 ### Step 1: Add to Finder Toolbar

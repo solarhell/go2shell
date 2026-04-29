@@ -50,6 +50,14 @@ brew upgrade solarhell/tap/go2shell
 make install
 ```
 
+> ⚠️ **注意**：应用未经 notarize，首次打开可能被 macOS Gatekeeper 拦截。解决方法：
+>
+> ```bash
+> xattr -d com.apple.quarantine /Applications/go2shell.app
+> ```
+>
+> 或前往 **系统设置 > 隐私与安全性**，点击"仍要打开"。
+
 ## 🎯 使用方式
 
 ### 第一步：添加到 Finder 工具栏
