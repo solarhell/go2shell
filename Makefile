@@ -10,6 +10,7 @@ BUILD_DIR = .build
 RELEASE_DIR = $(BUILD_DIR)/release
 APP_BUNDLE = $(BUILD_DIR)/$(APP_NAME).app
 INSTALL_PATH = /Applications/$(APP_NAME).app
+HOST_ARCH = $(shell uname -m)
 
 # 默认目标
 all: build
@@ -69,7 +70,8 @@ create-bundle:
 	@cp $(RELEASE_DIR)/go2shell $(APP_BUNDLE)/Contents/MacOS/
 
 	# 复制 SPM resource bundle（本地化资源等）
-	@for bundle in $(BUILD_DIR)/arm64-apple-macosx/release/*.bundle; do \
+	# $(RELEASE_DIR) 是 SPM 在当前架构构建后创建的符号链接，自动指向 .build/<arch>-apple-macosx/release
+	@for bundle in $(RELEASE_DIR)/*.bundle; do \
 		if [ -d "$$bundle" ]; then \
 			cp -r "$$bundle" $(APP_BUNDLE)/Contents/Resources/; \
 		fi; \
@@ -165,13 +167,13 @@ icon:
 	@rm -rf $(BUILD_DIR)/AppIcon.iconset
 	@echo "✅ 图标生成完成: Resources/AppIcon.icns"
 
-# 打包 Release zip（用于 Homebrew Cask 分发）
+# 打包 Release zip（用于 Homebrew Cask 分发；按当前主机架构命名）
 release: build
-	@echo "📦 打包 Release..."
+	@echo "📦 打包 Release ($(HOST_ARCH))..."
 	@mkdir -p build
-	@cd .build && zip -r ../build/go2shell.zip go2shell.app
-	@echo "✅ 打包完成: build/go2shell.zip"
-	@shasum -a 256 build/go2shell.zip
+	@cd .build && zip -r ../build/go2shell-macOS-$(HOST_ARCH).zip go2shell.app
+	@echo "✅ 打包完成: build/go2shell-macOS-$(HOST_ARCH).zip"
+	@shasum -a 256 build/go2shell-macOS-$(HOST_ARCH).zip
 
 # 运行测试
 test:

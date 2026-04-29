@@ -40,12 +40,13 @@ jobs:
           echo "Using tag: $VERSION"
           echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Download checksum
+      - name: Download checksums
         run: |
           set -euo pipefail
           VERSION="${{ steps.validate-tag.outputs.tag }}"
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
-          curl -fsSL "${BASE_URL}/go2shell.zip.sha256" -o sha256
+          curl -fsSL "${BASE_URL}/go2shell-macOS-arm64.zip.sha256" -o sha256.arm64
+          curl -fsSL "${BASE_URL}/go2shell-macOS-x86_64.zip.sha256" -o sha256.x86_64
 
       - name: Update Homebrew Cask
         env:
@@ -55,19 +56,30 @@ jobs:
           VERSION="${{ steps.validate-tag.outputs.tag }}"
           VERSION_NUM="${VERSION#v}"
 
-          SHA256=$(tr -d '\n\r' < sha256)
+          SHA256_ARM64=$(tr -d '\n\r' < sha256.arm64)
+          SHA256_X86_64=$(tr -d '\n\r' < sha256.x86_64)
 
-          if [[ ! "$SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
-            echo "Error: invalid checksum: $SHA256"
-            exit 1
-          fi
+          for sha in "$SHA256_ARM64" "$SHA256_X86_64"; do
+            if [[ ! "$sha" =~ ^[0-9a-fA-F]{64}$ ]]; then
+              echo "Error: invalid checksum: $sha"
+              exit 1
+            fi
+          done
 
           cat > go2shell.rb << CASK_EOF
           cask "go2shell" do
             version "${VERSION_NUM}"
-            sha256 "${SHA256}"
 
-            url "https://github.com/solarhell/go2shell/releases/download/v#{version}/go2shell.zip"
+            on_arm do
+              sha256 "${SHA256_ARM64}"
+              url "https://github.com/solarhell/go2shell/releases/download/v#{version}/go2shell-macOS-arm64.zip"
+            end
+
+            on_intel do
+              sha256 "${SHA256_X86_64}"
+              url "https://github.com/solarhell/go2shell/releases/download/v#{version}/go2shell-macOS-x86_64.zip"
+            end
+
             name "go2shell"
             desc "Open terminal from Finder"
             homepage "https://github.com/solarhell/go2shell"
