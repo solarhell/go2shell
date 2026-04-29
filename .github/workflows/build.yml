@@ -16,11 +16,15 @@ permissions:
 jobs:
   build-macos:
     name: Build macOS
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag || github.ref }}
+
+      - uses: swift-actions/setup-swift@v3
+        with:
+          swift-version: "6.3"
 
       - name: Build
         run: make build
