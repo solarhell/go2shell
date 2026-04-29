@@ -10,6 +10,8 @@ class TerminalManager {
         case warp = "Warp"
         case ghostty = "Ghostty"
         case wezterm = "WezTerm"
+        case kitty = "Kitty"
+        case alacritty = "Alacritty"
 
         var displayName: String {
             switch self {
@@ -18,6 +20,8 @@ class TerminalManager {
             case .warp: return "Warp"
             case .ghostty: return "Ghostty"
             case .wezterm: return "WezTerm"
+            case .kitty: return "Kitty"
+            case .alacritty: return "Alacritty"
             }
         }
 
@@ -28,6 +32,8 @@ class TerminalManager {
             case .warp: return "/Applications/Warp.app"
             case .ghostty: return "/Applications/Ghostty.app"
             case .wezterm: return "/Applications/WezTerm.app"
+            case .kitty: return "/Applications/kitty.app"
+            case .alacritty: return "/Applications/Alacritty.app"
             }
         }
 
@@ -54,6 +60,10 @@ class TerminalManager {
             openGhostty(atPath: path)
         case .wezterm:
             openWezTerm(atPath: path)
+        case .kitty:
+            openKitty(atPath: path)
+        case .alacritty:
+            openAlacritty(atPath: path)
         }
     }
 
@@ -103,6 +113,26 @@ class TerminalManager {
         let escapedPath = path.specialCharEscaped(2)
         let source = """
         do shell script "open -a WezTerm \(escapedPath)"
+        """
+        var error: NSDictionary?
+        NSAppleScript(source: source)?.executeAndReturnError(&error)
+    }
+
+    /// Kitty
+    private static func openKitty(atPath path: String) {
+        let escapedPath = path.specialCharEscaped(2)
+        let source = """
+        do shell script "open -a kitty \(escapedPath)"
+        """
+        var error: NSDictionary?
+        NSAppleScript(source: source)?.executeAndReturnError(&error)
+    }
+
+    /// Alacritty
+    private static func openAlacritty(atPath path: String) {
+        let escapedPath = path.specialCharEscaped(2)
+        let source = """
+        do shell script "open -a Alacritty \(escapedPath)"
         """
         var error: NSDictionary?
         NSAppleScript(source: source)?.executeAndReturnError(&error)
