@@ -37,6 +37,9 @@
 ### Homebrew（推荐）
 
 ```bash
+# 信任 cask（一次性操作；Homebrew ≥ 5.1.15 需要，旧版本可跳过）
+brew trust --cask solarhell/tap/go2shell
+
 # 安装
 brew install solarhell/tap/go2shell
 

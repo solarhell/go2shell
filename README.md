@@ -36,6 +36,9 @@ The app auto-detects the following terminals. Uninstalled ones are greyed out:
 ### Homebrew (recommended)
 
 ```bash
+# Trust the cask (one-time; needed on Homebrew ≥ 5.1.15, skip on older versions)
+brew trust --cask solarhell/tap/go2shell
+
 # Install
 brew install solarhell/tap/go2shell
 
