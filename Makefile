@@ -11,6 +11,10 @@ RELEASE_DIR = $(BUILD_DIR)/release
 APP_BUNDLE = $(BUILD_DIR)/$(APP_NAME).app
 INSTALL_PATH = /Applications/$(APP_NAME).app
 HOST_ARCH = $(shell uname -m)
+DETECTED_APP_VERSION = $(shell git describe --tags --match 'v[0-9]*' --abbrev=0 2>/dev/null | sed 's/^v//')
+PLIST_APP_VERSION = $(shell /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist 2>/dev/null || echo 0.0.0)
+APP_VERSION ?= $(if $(DETECTED_APP_VERSION),$(DETECTED_APP_VERSION),$(PLIST_APP_VERSION))
+APP_BUILD ?= $(shell git rev-list --count HEAD 2>/dev/null || echo 1)
 
 # 默认目标
 all: build
@@ -79,6 +83,8 @@ create-bundle:
 
 	# 复制主应用配置
 	@cp Resources/Info.plist $(APP_BUNDLE)/Contents/
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(APP_VERSION)" $(APP_BUNDLE)/Contents/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(APP_BUILD)" $(APP_BUNDLE)/Contents/Info.plist
 
 	# 复制图标（如果存在）
 	@if [ -f Resources/AppIcon.icns ]; then \
@@ -192,6 +198,10 @@ debug:
 	@echo "============"
 	@echo "Swift 版本:"
 	@swift --version
+	@echo ""
+	@echo "构建版本:"
+	@echo "  APP_VERSION=$(APP_VERSION)"
+	@echo "  APP_BUILD=$(APP_BUILD)"
 	@echo ""
 	@echo "应用状态:"
 	@if [ -d "$(INSTALL_PATH)" ]; then \
