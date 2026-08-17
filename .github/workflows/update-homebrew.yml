@@ -51,9 +51,9 @@ jobs:
       - name: Update Homebrew Cask
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.validate-tag.outputs.tag }}
         run: |
           set -euo pipefail
-          VERSION="${{ steps.validate-tag.outputs.tag }}"
           VERSION_NUM="${VERSION#v}"
 
           SHA256_ARM64=$(tr -d '\n\r' < sha256.arm64)
@@ -66,50 +66,64 @@ jobs:
             fi
           done
 
-          cat > solarhell-go2shell.rb << CASK_EOF
-          cask "solarhell-go2shell" do
-            version "${VERSION_NUM}"
+          git clone --depth 1 "https://git:${GH_TOKEN}@github.com/solarhell/homebrew-tap.git"
 
-            on_arm do
-              sha256 "${SHA256_ARM64}"
-              url "https://github.com/solarhell/go2shell/releases/download/v#{version}/go2shell-macOS-arm64.zip"
-            end
+          CASK=homebrew-tap/Casks/solarhell-go2shell.rb
+          if [[ ! -f "$CASK" ]]; then
+            echo "Error: $CASK not found in the tap"
+            exit 1
+          fi
 
-            on_intel do
-              sha256 "${SHA256_X86_64}"
-              url "https://github.com/solarhell/go2shell/releases/download/v#{version}/go2shell-macOS-x86_64.zip"
-            end
+          # The cask file in the tap is the source of truth. Only the version and
+          # the two checksums are rewritten here; everything else (caveats,
+          # depends_on, name, ...) stays under manual control in the tap repo.
+          VERSION_NUM="$VERSION_NUM" \
+          SHA_ARM="$SHA256_ARM64" \
+          SHA_INTEL="$SHA256_X86_64" \
+          python3 - "$CASK" <<'PY'
+          import os
+          import re
+          import sys
 
-            name "go2shell"
-            desc "Open terminal from Finder"
-            homepage "https://github.com/solarhell/go2shell"
+          path = sys.argv[1]
+          version = os.environ["VERSION_NUM"]
+          sha_arm = os.environ["SHA_ARM"]
+          sha_intel = os.environ["SHA_INTEL"]
 
-            depends_on macos: :sequoia
+          def rewrite(text, pattern, value, what):
+              new, count = re.subn(
+                  pattern,
+                  lambda m: m.group(1) + value + m.group(2),
+                  text,
+                  count=1,
+                  flags=re.M,
+              )
+              if count != 1:
+                  sys.exit(
+                      f"error: could not update {what} in {path}. "
+                      f"The cask layout changed; update this workflow to match."
+                  )
+              return new
 
-            app "go2shell.app"
+          src = open(path, encoding="utf-8").read()
+          src = rewrite(src, r'^(\s*version\s+")[^"]*(")', version, "version")
+          src = rewrite(src, r'^(\s*sha256\s+arm:\s+")[0-9a-fA-F]{64}(")', sha_arm, "arm sha256")
+          src = rewrite(src, r'^(\s*intel:\s+")[0-9a-fA-F]{64}(")', sha_intel, "intel sha256")
+          open(path, "w", encoding="utf-8").write(src)
+          PY
 
-            caveats do
-              <<~EOS
-                go2shell is not notarized. On first launch, macOS Gatekeeper may block it.
-                To allow it, run:
-                  xattr -d com.apple.quarantine /Applications/go2shell.app
-
-                Or go to System Settings > Privacy & Security > click "Open Anyway".
-              EOS
-            end
-          end
-          CASK_EOF
-
-          echo "Generated cask:"
-          cat solarhell-go2shell.rb
-
-          git clone https://git:${GH_TOKEN}@github.com/solarhell/homebrew-tap.git
-          mkdir -p homebrew-tap/Casks
-          cp solarhell-go2shell.rb homebrew-tap/Casks/solarhell-go2shell.rb
+          echo "Updated cask:"
+          cat "$CASK"
 
           cd homebrew-tap
+          if git diff --quiet; then
+            echo "Cask already up to date, nothing to commit"
+            exit 0
+          fi
+
+          git diff
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/solarhell-go2shell.rb
-          git commit -m "Update go2shell to ${VERSION}" || echo "No changes to commit"
+          git commit -m "Update go2shell to ${VERSION}"
           git push
