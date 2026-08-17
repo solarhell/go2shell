@@ -37,14 +37,24 @@ The app auto-detects the following terminals. Uninstalled ones are greyed out:
 
 ```bash
 # Trust the cask (one-time; needed on Homebrew ≥ 5.1.15, skip on older versions)
-brew trust --cask solarhell/tap/go2shell
+brew trust --cask solarhell/tap/solarhell-go2shell
 
 # Install
-brew install solarhell/tap/go2shell
+brew install solarhell/tap/solarhell-go2shell
 
 # Upgrade
-brew upgrade solarhell/tap/go2shell
+brew upgrade solarhell/tap/solarhell-go2shell
 ```
+
+> **Upgrading from an older install?** The cask was renamed from `go2shell` to
+> `solarhell-go2shell` to avoid a name collision with the unrelated `go2shell`
+> cask in `homebrew/cask`. Trust entries are stored per token and are not
+> carried over by the rename, so trust the new token first, then migrate:
+>
+> ```bash
+> brew trust --cask solarhell/tap/solarhell-go2shell
+> brew migrate --cask solarhell/tap/go2shell
+> ```
 
 ### Build from source
 

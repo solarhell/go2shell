@@ -66,8 +66,8 @@ jobs:
             fi
           done
 
-          cat > go2shell.rb << CASK_EOF
-          cask "go2shell" do
+          cat > solarhell-go2shell.rb << CASK_EOF
+          cask "solarhell-go2shell" do
             version "${VERSION_NUM}"
 
             on_arm do
@@ -101,15 +101,15 @@ jobs:
           CASK_EOF
 
           echo "Generated cask:"
-          cat go2shell.rb
+          cat solarhell-go2shell.rb
 
           git clone https://git:${GH_TOKEN}@github.com/solarhell/homebrew-tap.git
           mkdir -p homebrew-tap/Casks
-          cp go2shell.rb homebrew-tap/Casks/go2shell.rb
+          cp solarhell-go2shell.rb homebrew-tap/Casks/solarhell-go2shell.rb
 
           cd homebrew-tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/go2shell.rb
+          git add Casks/solarhell-go2shell.rb
           git commit -m "Update go2shell to ${VERSION}" || echo "No changes to commit"
           git push

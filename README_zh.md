@@ -38,14 +38,23 @@
 
 ```bash
 # 信任 cask（一次性操作；Homebrew ≥ 5.1.15 需要，旧版本可跳过）
-brew trust --cask solarhell/tap/go2shell
+brew trust --cask solarhell/tap/solarhell-go2shell
 
 # 安装
-brew install solarhell/tap/go2shell
+brew install solarhell/tap/solarhell-go2shell
 
 # 升级
-brew upgrade solarhell/tap/go2shell
+brew upgrade solarhell/tap/solarhell-go2shell
 ```
+
+> **从旧版本升级？** 为避免与 `homebrew/cask` 中同名但无关的 `go2shell` 冲突，
+> cask 已从 `go2shell` 更名为 `solarhell-go2shell`。信任记录按 token 存储，
+> 不会随更名迁移，因此需要先信任新 token 再执行迁移：
+>
+> ```bash
+> brew trust --cask solarhell/tap/solarhell-go2shell
+> brew migrate --cask solarhell/tap/go2shell
+> ```
 
 ### 从源码构建
 
